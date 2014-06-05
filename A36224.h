@@ -11,9 +11,9 @@
 // Set up Tris and ADC Settings
 #define TRISA_VALUE               0b1111111111111111
 #define TRISB_VALUE               0b1111111111111111
-#define TRISC_VALUE               0b1111111111100001
+#define TRISC_VALUE               0b1011111111100001
 #define TRISD_VALUE               0b1111111111100000
-#define TRISF_VALUE               0b1111111111111101
+#define TRISF_VALUE               0b1111111111111111
 #define TRISG_VALUE               0b0000111111111101
 
 // Set up Analog/Digital Inputs on Port B
@@ -30,7 +30,7 @@
 #define ILL_DIGITAL_INPUT_ACTIVE      0
 
 #define PIN_CAN2_RX                   _RG0
-#define PIN_OPTICAL_IN                _RF0
+#define PIN_OPTICAL_IN                _RF3
 
 // Digital Output Pins
 #define PIN_DIGITAL_OUT_0             _LATD0
@@ -42,7 +42,7 @@
 #define OLL_REFRESH_ACTIVE            0
 
 #define PIN_CAN2_TX                   _LATG1
-#define PIN_OPTICAL_OUT               _LATF1
+#define PIN_OPTICAL_OUT               _LATC14
 
 
 #define PIN_LED_I1_A                  _LATG14
