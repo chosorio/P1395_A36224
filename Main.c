@@ -33,7 +33,7 @@ unsigned int timer_roll;
 unsigned int dac_ramp = 0;
 
 MCP4822 U42_MCP4822;
-MCP4822 U45_MCP4822;
+MCP4822 U44_MCP4822;
 
 int main(void) {
 
@@ -85,15 +85,15 @@ int main(void) {
   U42_MCP4822.fcy_clk = FCY;
   SetupMCP4822(&U42_MCP4822);
 
-  U45_MCP4822.pin_chip_select_not = _PIN_RD15;
-  U45_MCP4822.pin_load_dac_not = _PIN_RF5;
-  U45_MCP4822.spi_port = ETM_SPI_PORT_2;
-  U45_MCP4822.spi_con1_value = MCP4822_SPI_CON_VALUE;
-  U45_MCP4822.spi_con2_value = MCP4822_SPI_CON2_VALUE;
-  U45_MCP4822.spi_stat_value = MCP4822_SPI_STAT_VALUE;
-  U45_MCP4822.spi_bit_rate = 100000;
-  U45_MCP4822.fcy_clk = FCY;
-  SetupMCP4822(&U45_MCP4822);
+  U44_MCP4822.pin_chip_select_not = _PIN_RD15;
+  U44_MCP4822.pin_load_dac_not = _PIN_RF5;
+  U44_MCP4822.spi_port = ETM_SPI_PORT_2;
+  U44_MCP4822.spi_con1_value = MCP4822_SPI_CON_VALUE;
+  U44_MCP4822.spi_con2_value = MCP4822_SPI_CON2_VALUE;
+  U44_MCP4822.spi_stat_value = MCP4822_SPI_STAT_VALUE;
+  U44_MCP4822.spi_bit_rate = 100000;
+  U44_MCP4822.fcy_clk = FCY;
+  SetupMCP4822(&U44_MCP4822);
 
 
   while (1) {
@@ -207,8 +207,8 @@ int main(void) {
    
     WriteMCP4822(&U42_MCP4822, MCP4822_A_ON, analog_0);
     WriteMCP4822(&U42_MCP4822, MCP4822_B_ON, analog_1);
-    WriteMCP4822(&U45_MCP4822, MCP4822_A_ON, analog_2);
-    WriteMCP4822(&U45_MCP4822, MCP4822_B_ON, dac_ramp);
+    WriteMCP4822(&U44_MCP4822, MCP4822_A_ON, flow_0);
+    WriteMCP4822(&U44_MCP4822, MCP4822_B_ON, dac_ramp);
     
   }
 }
