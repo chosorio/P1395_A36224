@@ -14,6 +14,19 @@ _FSS(WR_PROT_SEC_OFF & NO_SEC_CODE & NO_SEC_EEPROM & NO_SEC_RAM);
 _FGS(CODE_PROT_OFF);
 _FICD(PGD);
 
+unsigned long input_capture_2_period;
+unsigned long input_capture_3_period;
+
+
+unsigned int  ic2_tmr2_loops = 0;
+unsigned int  ic3_tmr2_loops = 0;
+
+unsigned int  ic2_previous_reading;
+unsigned int  ic3_previous_reading;
+
+#define IC_PERIOD_240HZ          2604
+
+
 
 unsigned int flow_0;
 unsigned int flow_1;
@@ -36,6 +49,10 @@ MCP4822 U42_MCP4822;
 MCP4822 U44_MCP4822;
 
 int main(void) {
+
+  unsigned long flow_long;
+  unsigned int flow_int;
+
 
   // Configure ADC Interrupt
   _ADIE = 0;
@@ -66,7 +83,31 @@ int main(void) {
   ADCON1bits.ADON = 1;
   _ADIF = 0;
   _ADIE = 1;
+
+
+  // Configure TMR2
+  PR1 = 0xFFFF;
+  _T2IF = 0;  
+  _T2IE = 1;
+  _T2IP = 4;
+  T2CON = T2_CONFIG_VALUE;       // Will roll at 1.677722 Second Intervals
   
+
+
+
+  // Configure Input Capture Module
+  IC3CON = INPUT_CAPTURE_CONFIG;
+  IC2CON = INPUT_CAPTURE_CONFIG;
+
+  _IC2IP = 3;
+  _IC3IP = 3;
+
+  _IC2IF = 0;
+  _IC3IF = 0;
+  
+  _IC3IE = 1;
+  _IC2IE = 1;
+
   
   // Initialize Timer 1 (100ms Interrupt)
   PR1 = T1_PERIOD_VALUE;
@@ -206,8 +247,19 @@ int main(void) {
 
    
     WriteMCP4822(&U42_MCP4822, MCP4822_A_ON, analog_0);
-    WriteMCP4822(&U42_MCP4822, MCP4822_B_ON, analog_1);
-    WriteMCP4822(&U44_MCP4822, MCP4822_A_ON, flow_0);
+
+    flow_long = IC_PERIOD_240HZ;
+    flow_long <<= 12;
+    flow_long /= input_capture_3_period;
+    if (flow_long >= 0x0FFF) {
+      flow_long = 0x0FFF;
+    }
+    flow_int = flow_long;
+    WriteMCP4822(&U42_MCP4822, MCP4822_B_ON, flow_int);
+
+
+    WriteMCP4822(&U44_MCP4822, MCP4822_A_ON, flow_0);  
+
     WriteMCP4822(&U44_MCP4822, MCP4822_B_ON, dac_ramp);
     
   }
@@ -229,6 +281,81 @@ void _ISRNOPSV _T1Interrupt(void) {
   timer_roll = 1;
 }
 
+
+void _ISRNOPSV _IC2Interrupt(void) {
+  unsigned int timer_reading;
+
+  _IC2IF = 0;
+
+  timer_reading = IC2BUF;
+  input_capture_2_period = ic2_tmr2_loops;
+  input_capture_2_period *= PR2;
+  input_capture_2_period += timer_reading;
+  if (input_capture_2_period > ic2_previous_reading) {
+    input_capture_2_period -= ic2_previous_reading;
+  }
+
+  ic2_previous_reading = timer_reading;
+  ic2_tmr2_loops = 0;
+}
+
+void _ISRNOPSV _IC3Interrupt(void) {
+  unsigned int timer_reading;
+
+  _IC3IF = 0;
+
+  timer_reading = IC3BUF;
+  input_capture_3_period = ic3_tmr2_loops;
+  input_capture_3_period *= PR2;
+  input_capture_3_period += timer_reading;
+  if (input_capture_3_period > ic3_previous_reading) {
+    input_capture_3_period -= ic3_previous_reading;
+  }
+
+  ic3_previous_reading = timer_reading;
+  ic3_tmr2_loops = 0;
+}
+
+void _ISRNOPSV _T2Interrupt(void) {		
+  unsigned long compare;
+  _T2IF = 0;
+  
+
+  compare = ic2_tmr2_loops;
+  compare *= PR2;
+  if (input_capture_2_period <= compare) {
+    input_capture_2_period = compare;
+  }
+
+  compare = ic3_tmr2_loops;
+  compare *= PR2;
+  if (input_capture_3_period <= compare) {
+    input_capture_3_period = compare;
+  }
+
+
+
+  ic2_tmr2_loops++;
+  if (ic2_tmr2_loops > 0xF0) {
+    ic2_tmr2_loops = 0xF0;
+  }
+
+  ic3_tmr2_loops++;
+  if (ic3_tmr2_loops > 0xF0) {
+    ic3_tmr2_loops = 0xF0;
+  }
+
+  if (IC2CONbits.ICOV) {
+    IC2CON = 0x0000;
+    IC2CON = INPUT_CAPTURE_CONFIG;
+  }
+
+  if (IC3CONbits.ICOV) {
+    IC3CON = 0x0000;
+    IC3CON = INPUT_CAPTURE_CONFIG;
+  }
+
+}  
 
 
 void _ISRNOPSV _ADCInterrupt(void) {

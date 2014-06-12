@@ -67,8 +67,8 @@
 #define T1_PERIOD_VALUE           (unsigned int)(FCY/256/10)
 #define T1_CONFIG_VALUE           0b1000000000110000   // Timer On and 256 Prescale  
 
-
-
+#define T2_CONFIG_VALUE           0b1000000000110000   // Timer On and 256 Prescale  
+#define INPUT_CAPTURE_CONFIG      0b0000000010000101   // TMR2, Interrupt every capture, Capture Every 16th rising edge
 
 #define _ISRFASTNOPSV __attribute__((interrupt, shadow, no_auto_psv)) 
 #define _ISRNOPSV __attribute__((interrupt, no_auto_psv)) 
