@@ -3,6 +3,7 @@
 
 #include "A36224.h"
 #include "MCP4822.h"
+#include "ETM_CAN.h"
 
 /* Configuration Bit Settings */
 _FOSC(ECIO & CSW_FSCM_OFF); // Primary Oscillator with PLL and Startup with User Selected Oscillator Source
@@ -137,7 +138,14 @@ int main(void) {
   SetupMCP4822(&U44_MCP4822);
 
 
+  etm_can_address = 72;
+
+  ETMCanInitialize();
+
   while (1) {
+    ETMCanDoReadWriteBuffer();
+    
+    
     ClrWdt();
     // Indicate the PIC is powered by flashing the power LED
     if (timer_roll) {

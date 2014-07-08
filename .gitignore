@@ -2,16 +2,12 @@
 
 #MICPRCHIP MPLAB X FILES
 *.CS_
-\nbproject
-\build
-\debug
-*.cof
+*/nbproject/*
+!configurations.xml
+*/build/*
 *.map
-*.psp
-*.sbl
 *.elf
 Makefile
-
 
 # Emacs Files
 *~
