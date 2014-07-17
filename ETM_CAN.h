@@ -10,22 +10,21 @@
 typedef struct {
   unsigned long sdo_index;
   unsigned char is_upload;
-
-  unsigned char RX_0;
-  unsigned char RX_1;
-  unsigned char RX_2;
-  unsigned char RX_3;
-
-  unsigned char TX_0;
-  unsigned char TX_1;
-  unsigned char TX_2;
-  unsigned char TX_3;
+  
+  unsigned char RX_LOW_WORD_LOW_BYTE;
+  unsigned char RX_LOW_WORD_HIGH_BYTE;
+  unsigned char RX_HIGH_WORD_LOW_BYTE;
+  unsigned char RX_HIGH_WORD_HIGH_BYTE;
+  
+  unsigned char TX_LOW_WORD_LOW_BYTE;
+  unsigned char TX_LOW_WORD_HIGH_BYTE;
+  unsigned char TX_HIGH_WORD_LOW_BYTE;
+  unsigned char TX_HIGH_WORD_HIGH_BYTE;
 } CanCommandStruct;
 
 
-void ETMCanInitialize(void);
+void ETMCanInitialize(unsigned char address);
 void ETMCanDoReadWriteBuffer(void);
-void ETMCanApplicationDefinedCommands(CanCommandStruct* can_command);
+unsigned char ETMCanApplicationDefinedCommands(CanCommandStruct* can_command);
 
-extern unsigned char etm_can_address;
 #endif

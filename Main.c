@@ -138,9 +138,8 @@ int main(void) {
   SetupMCP4822(&U44_MCP4822);
 
 
-  etm_can_address = 72;
 
-  ETMCanInitialize();
+  ETMCanInitialize(73);
 
   while (1) {
     ETMCanDoReadWriteBuffer();
@@ -159,9 +158,9 @@ int main(void) {
     
     // Test digital inputs
     if (PIN_DIGITAL_IN_0 == ILL_DIGITAL_INPUT_ACTIVE) {
-      PIN_LED_I2_A = OLL_LED_ON;
+      //PIN_LED_I2_A = OLL_LED_ON;
     } else {
-      PIN_LED_I2_A = !OLL_LED_ON;
+      //PIN_LED_I2_A = !OLL_LED_ON;
     }
     
 
@@ -203,9 +202,9 @@ int main(void) {
 
     // Test Digital Outputs
     if (PIN_DIGITAL_IN_0 == ILL_DIGITAL_INPUT_ACTIVE) {
-      PIN_DIGITAL_OUT_0 = 1;
+      //PIN_DIGITAL_OUT_0 = 1;
     } else {
-      PIN_DIGITAL_OUT_0 = 0;
+      //PIN_DIGITAL_OUT_0 = 0;
     }
 
     if (PIN_DIGITAL_IN_1 == ILL_DIGITAL_INPUT_ACTIVE) {
@@ -247,12 +246,12 @@ int main(void) {
     }
 
 
-
+    /*
 
     // Test A/D and D/A Conversions
 #define MCP4822_A_ON        (MCP4822_OUTPUT_A | MCP4822_GAIN_2X | MCP4822_OUTPUT_ENABLED) 
 #define MCP4822_B_ON        (MCP4822_OUTPUT_B | MCP4822_GAIN_2X | MCP4822_OUTPUT_ENABLED) 
-
+    
    
     WriteMCP4822(&U42_MCP4822, MCP4822_A_ON, analog_0);
 
@@ -269,7 +268,7 @@ int main(void) {
     WriteMCP4822(&U44_MCP4822, MCP4822_A_ON, flow_0);  
 
     WriteMCP4822(&U44_MCP4822, MCP4822_B_ON, dac_ramp);
-    
+    */
   }
 }
 

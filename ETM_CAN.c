@@ -3,6 +3,7 @@
 #include <can.h>
 
 
+
 #ifdef __USE_CAN_1
 
 #define _CXIE                       _C1IE
@@ -92,9 +93,10 @@ unsigned char can_output_message_read_index = 0;
 // InitCan() initializes can1, optionally enabling interrupts
 // so it can be used as the main console I/O port.
 //
-void ETMCanInitialize(void) {
+void ETMCanInitialize(unsigned char address) {
   char x;  // temp number holder
 
+  etm_can_address = address;
 
   _CXIE = 0;               // disable interrupt
   CXINTF = 0;              // individual flag register cleared */
@@ -159,6 +161,8 @@ void ETMCanPutResponseToBuffer(unsigned char length, unsigned char * data) {
   }
   can_output_message_write_index++;
   can_output_message_write_index &= 0x0F;
+
+  //ETMCanDoReadWriteBuffer();
 }
 
 
@@ -174,29 +178,53 @@ void ETMCanProcessCommand(unsigned char * data) {
   
   this_can_cmd.sdo_index = ((unsigned long)data[2] << 16) + ((unsigned long)data[1] << 8) + (unsigned long)data[3];
 
+  /*
+    data[0] Specifications
+    If data[0] = 0x23 Then it is a Write Dictionay Object (expedited) request
+    Reply with 0x60
+
+
+    If data[0] = 0x40 Then it is a Read Dictionary Object (expedited) request
+    Reply with 0x43
+
+
+    If the command is not valid/sucessful, respond with 0x80
+    
+   */
+
+
   if (data[0] == 0x40) {
     this_can_cmd.is_upload = 1;
-    txData[0] = 0x42;
-  } else {
+    txData[0] = 0x43;
+  } else if (data[0] == 0x23) {
     this_can_cmd.is_upload = 0;
     txData[0] = 0x60;
+  } else {
+    // not a supported command
+    // DPARKER figure out what to do
+    // Probably just abort
+    txData[0] = 0x80;
   }
 
   txData[1] = data[1];
   txData[2] = data[2];
   txData[3] = data[3];
 
-  this_can_cmd.RX_0 = data[4];
-  this_can_cmd.RX_1 = data[5];
-  this_can_cmd.RX_2 = data[6];
-  this_can_cmd.RX_3 = data[7];
+  this_can_cmd.RX_LOW_WORD_LOW_BYTE   = data[4];
+  this_can_cmd.RX_LOW_WORD_HIGH_BYTE  = data[5];
+  this_can_cmd.RX_HIGH_WORD_LOW_BYTE  = data[6];
+  this_can_cmd.RX_HIGH_WORD_HIGH_BYTE = data[7];
 
-  ETMCanApplicationDefinedCommands(&this_can_cmd);
-  
-  txData[4] = this_can_cmd.TX_0;
-  txData[5] = this_can_cmd.TX_1;
-  txData[6] = this_can_cmd.TX_2;
-  txData[7] = this_can_cmd.TX_3;
+  if (txData[0] != 0x80) {
+    if(ETMCanApplicationDefinedCommands(&this_can_cmd)) {
+      txData[0] = 0x80;
+    }
+  }
+
+  txData[4] = this_can_cmd.TX_LOW_WORD_LOW_BYTE;
+  txData[5] = this_can_cmd.TX_LOW_WORD_HIGH_BYTE;
+  txData[6] = this_can_cmd.TX_HIGH_WORD_LOW_BYTE;
+  txData[7] = this_can_cmd.TX_HIGH_WORD_HIGH_BYTE;
 
    
   ETMCanPutResponseToBuffer(8, &txData[0]);													    
