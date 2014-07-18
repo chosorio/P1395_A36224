@@ -11,10 +11,12 @@
 #define _CXIP                       _C1IP
 
 #define CXTX0CON                    C1TX0CON
+#define CXTX1CON                    C1TX1CON
 #define CXINTF                      C1INTF
 
 #define CXCTRLbits                  C1CTRLbits
 #define CXTX0CONbits                C1TX0CONbits
+#define CXTX1CONbits                C1TX1CONbits
 #define CXINTFbits                  C1INTFbits
 #define CXRX0CONbits                C1RX0CONbits
 #define CXINTEbits                  C1INTEbits
@@ -38,10 +40,12 @@
 #define _CXIP                       _C2IP
 
 #define CXTX0CON                    C2TX0CON
+#define CXTX1CON                    C2TX1CON
 #define CXINTF                      C2INTF
 
 #define CXCTRLbits                  C2CTRLbits
 #define CXTX0CONbits                C2TX0CONbits
+#define CXTX1CONbits                C2TX1CONbits
 #define CXINTFbits                  C2INTFbits
 #define CXRX0CONbits                C2RX0CONbits
 #define CXINTEbits                  C2INTEbits
@@ -175,60 +179,68 @@ void ETMCanPutResponseToBuffer(unsigned char length, unsigned char * data) {
 void ETMCanProcessCommand(unsigned char * data) {
   unsigned char txData[8] = {0, 0, 0, 0, 0, 0, 0, 0};
   CanCommandStruct this_can_cmd;
-  
-  this_can_cmd.sdo_index = ((unsigned long)data[2] << 16) + ((unsigned long)data[1] << 8) + (unsigned long)data[3];
+
+
 
   /*
     data[0] Specifications
-    If data[0] = 0x23 Then it is a Write Dictionay Object (expedited) request
+    If data[0] = 0x23 Then it is a Write Dictionay Object (expedited) request - this is a download
     Reply with 0x60
-
-
-    If data[0] = 0x40 Then it is a Read Dictionary Object (expedited) request
+    
+    
+    If data[0] = 0x40 Then it is a Read Dictionary Object (expedited) request - this is an upload request
     Reply with 0x43
-
-
+    
+    
     If the command is not valid/sucessful, respond with 0x80
     
-   */
+  */
 
-
-  if (data[0] == 0x40) {
-    this_can_cmd.is_upload = 1;
-    txData[0] = 0x43;
-  } else if (data[0] == 0x23) {
+  txData[1] = data[1];
+  txData[2] = data[2];
+  txData[3] = data[3];
+  
+  
+  if (data[0] == 0x23) {
     this_can_cmd.is_upload = 0;
     txData[0] = 0x60;
+  } else if (data[0] == 0x40) {
+    this_can_cmd.is_upload = 1;
+    txData[0] = 0x43;
   } else {
     // not a supported command
     // DPARKER figure out what to do
     // Probably just abort
     txData[0] = 0x80;
+    txData[4] = 0xFF;
+    txData[5] = 0x00;
+    txData[6] = 0x00;
+    txData[7] = 0x00;
   }
-
-  txData[1] = data[1];
-  txData[2] = data[2];
-  txData[3] = data[3];
-
-  this_can_cmd.RX_LOW_WORD_LOW_BYTE   = data[4];
-  this_can_cmd.RX_LOW_WORD_HIGH_BYTE  = data[5];
-  this_can_cmd.RX_HIGH_WORD_LOW_BYTE  = data[6];
-  this_can_cmd.RX_HIGH_WORD_HIGH_BYTE = data[7];
 
   if (txData[0] != 0x80) {
-    if(ETMCanApplicationDefinedCommands(&this_can_cmd)) {
+
+    this_can_cmd.sdo_index = ((unsigned long)data[2] << 16) + ((unsigned long)data[1] << 8) + (unsigned long)data[3];
+    
+    this_can_cmd.RX_LOW_WORD_LOW_BYTE   = data[4];
+    this_can_cmd.RX_LOW_WORD_HIGH_BYTE  = data[5];
+    this_can_cmd.RX_HIGH_WORD_LOW_BYTE  = data[6];
+    this_can_cmd.RX_HIGH_WORD_HIGH_BYTE = data[7];
+    
+
+    if(ETMCanApplicationDefinedCommands(&this_can_cmd) == 0) {
       txData[0] = 0x80;
     }
+        
+    txData[4] = this_can_cmd.TX_LOW_WORD_LOW_BYTE;
+    txData[5] = this_can_cmd.TX_LOW_WORD_HIGH_BYTE;
+    txData[6] = this_can_cmd.TX_HIGH_WORD_LOW_BYTE;
+    txData[7] = this_can_cmd.TX_HIGH_WORD_HIGH_BYTE;
+        
   }
-
-  txData[4] = this_can_cmd.TX_LOW_WORD_LOW_BYTE;
-  txData[5] = this_can_cmd.TX_LOW_WORD_HIGH_BYTE;
-  txData[6] = this_can_cmd.TX_HIGH_WORD_LOW_BYTE;
-  txData[7] = this_can_cmd.TX_HIGH_WORD_HIGH_BYTE;
-
-   
-  ETMCanPutResponseToBuffer(8, &txData[0]);													    
   
+  ETMCanPutResponseToBuffer(8, &txData[0]);													    
+
 }
 
 
@@ -262,6 +274,38 @@ void ETMCanDoReadWriteBuffer(void) {
       }
     }
   }
+}
+
+
+
+void ETMCanMasterTransmit(unsigned char etm_can_remote_address, unsigned int object_index, unsigned char sub_index, unsigned long data) {
+  
+  unsigned char message[8];
+  message[0] = 0x23;
+  message[1] = (object_index & 0x00FF);
+  message[2] = (object_index >> 8);
+  message[3] = sub_index;
+  message[4] = (data & 0x000000FF);
+  data >>= 8;
+  message[5] = (data & 0x000000FF);
+  data >>= 8;
+  message[6] = (data & 0x000000FF);
+  data >>= 8;
+  message[7] = (data & 0x000000FF);
+
+  if (CANXIsTXReady(1)) {
+    CANXSendMessage((CAN_TX_SID((RECV_BASE_SID + etm_can_remote_address)) & CAN_TX_EID_DIS & CAN_SUB_NOR_TX_REQ), 0, &message[0], 8, 1);        
+  } else  {
+    // check tx error and clear the status, make buffer available
+    if (CXTX1CON & 0x070) {
+      CXTX1CONbits.TXREQ = 0;
+    }
+  }
+  
+  // NOTE!!! This does not check for the response (that should be coming back)
+
+  // DPARKER consider checking for the response
+
 }
 
 

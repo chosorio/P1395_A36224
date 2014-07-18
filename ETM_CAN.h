@@ -26,5 +26,6 @@ typedef struct {
 void ETMCanInitialize(unsigned char address);
 void ETMCanDoReadWriteBuffer(void);
 unsigned char ETMCanApplicationDefinedCommands(CanCommandStruct* can_command);
+void ETMCanMasterTransmit(unsigned char etm_can_remote_address, unsigned int object_index, unsigned char sub_index, unsigned long data);
 
 #endif

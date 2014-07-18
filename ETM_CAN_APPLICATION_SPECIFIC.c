@@ -31,7 +31,15 @@ unsigned char dan_byte_7 = 0;
 
 
 unsigned char ETMCanApplicationDefinedCommands(CanCommandStruct* can_command) {
+  /* 
+     This function must return 0xFF is the command executed properly
   
+     This function must return 0x00 if the command does not execute properly.  It may also place the error data into the TX_BYTES.
+
+     For example if we have a read only register and "is_upload" is cleared (Download to this device) then we must return an error.
+  */
+
+
   switch (can_command->sdo_index) {
     
   case SDO_DAN_TEST_REGISTER:
@@ -86,33 +94,15 @@ unsigned char ETMCanApplicationDefinedCommands(CanCommandStruct* can_command) {
 
     break;
 
-
-   /* 
-  case SDO_IDX_RESET_CMD:
-    if (is_upload) {
-      //txData[4] = sdo_reset_cmd_active;
-    } else if (data[4] == 0 || data[4] == 0xff) {
-      //  	if (!sdo_reset_cmd_active && data[4])  
-      //if (data[4]) { 
-      //sdo_logic_reset = 1;	 // only reset fault on rising edge
-      //}
-      //sdo_reset_cmd_active = data[4];	
-      //if (sdo_reset_cmd_active && (system_byte & SYS_BYTE_HV_ON)) {
-      //LogHvControl(0); 
-      //}
-    }
-    break;
-    */
-    
   default:
     can_command->TX_LOW_WORD_LOW_BYTE = 0x06;
     can_command->TX_LOW_WORD_HIGH_BYTE = 0x01;
     can_command->TX_HIGH_WORD_LOW_BYTE = 0x00;
     can_command->TX_HIGH_WORD_HIGH_BYTE = 0x00;
-    return 0xFF;
+    return 0x00;
     break;
     
   }
-  return 0x00;
+  return 0xFF;
 }
 

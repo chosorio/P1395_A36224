@@ -41,6 +41,8 @@ unsigned int analog_1;
 unsigned int analog_2;
 unsigned int analog_3;
 
+unsigned long tmr3_counter = 0;
+
 
 unsigned int refresh_enabled;
 unsigned int timer_roll;
@@ -94,6 +96,12 @@ int main(void) {
   T2CON = T2_CONFIG_VALUE;       // Will roll at 1.677722 Second Intervals
   
 
+  // Configure TMR3
+  PR3 = 39;
+  _T3IF = 0;
+  _T3IE = 0;
+  T3CON = T3_CONFIG_VALUE;       // Will roll at 1mS Interval
+
 
 
   // Configure Input Capture Module
@@ -143,7 +151,12 @@ int main(void) {
 
   while (1) {
     ETMCanDoReadWriteBuffer();
-    
+
+    if (_T3IF) {
+      _T3IF = 0;
+      tmr3_counter++;
+      ETMCanMasterTransmit(72, 0x1001, 0x00, tmr3_counter);
+    }
     
     ClrWdt();
     // Indicate the PIC is powered by flashing the power LED
